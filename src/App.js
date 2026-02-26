@@ -1,23 +1,71 @@
-import logo from './logo.svg';
+import React, { useMemo, useState } from 'react';
 import './App.css';
+import useRegistrations, {
+  computeTotalParticipants,
+  getCompetitionNames,
+  filterRegistrations,
+} from './hooks/useParticipants';
+import Header from './components/Header';
+import Filters from './components/Filters';
+import ParticipantsTable from './components/ParticipantsTable';
+
+const PAGE_SIZE = 50;
 
 function App() {
+  const { allDocs, loading, error } = useRegistrations();
+  const [eventFilter, setEventFilter] = useState('');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+
+  /* derive competition dropdown options from ALL docs (unfiltered) */
+  const events = useMemo(() => getCompetitionNames(allDocs), [allDocs]);
+
+  /* filtered rows (by event & search) */
+  const filtered = useMemo(
+    () => filterRegistrations(allDocs, { eventFilter, search }),
+    [allDocs, eventFilter, search]
+  );
+
+  /* stats — computed over the FILTERED set */
+  const totalParticipants = useMemo(() => computeTotalParticipants(filtered), [filtered]);
+  const totalRevenue = totalParticipants * 100;
+
+  /* paginated slice */
+  const pageRows = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, page]);
+
+  /* reset to page 1 when filters change */
+  const handleEventChange = (v) => { setEventFilter(v); setPage(1); };
+  const handleSearchChange = (v) => { setSearch(v); setPage(1); };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="app">
+      <Header
+        totalRegistrations={filtered.length}
+        totalParticipants={totalParticipants}
+        totalRevenue={totalRevenue}
+      />
+      <Filters
+        events={events}
+        selectedEvent={eventFilter}
+        onSelectEvent={handleEventChange}
+        search={search}
+        onSearch={handleSearchChange}
+      />
+      {error && <div className="error-banner">⚠ {error}</div>}
+      {loading ? (
+        <div className="loader">Loading registrations…</div>
+      ) : (
+        <ParticipantsTable
+          rows={pageRows}
+          page={page}
+          setPage={setPage}
+          pageSize={PAGE_SIZE}
+          totalFiltered={filtered.length}
+        />
+      )}
     </div>
   );
 }

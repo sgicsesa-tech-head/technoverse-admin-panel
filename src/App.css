@@ -1,38 +1,203 @@
-.App {
-  text-align: center;
+/* ===== Global reset ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #f4f6f8;
+  color: #1e1e2f;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* ===== App wrapper ===== */
+.app {
+  max-width: 1340px;
+  margin: 0 auto;
+  padding: 24px 20px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+/* ===== Header ===== */
+.header {
+  margin-bottom: 24px;
 }
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.header h1 {
+  font-size: 1.6rem;
+  margin-bottom: 16px;
+}
+.stats-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.stat-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 16px 28px;
   display: flex;
   flex-direction: column;
+  min-width: 160px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.stat-card.accent {
+  background: #1976d2;
+  color: #fff;
+  border-color: #1565c0;
+}
+.stat-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  opacity: 0.7;
+  margin-bottom: 4px;
+}
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* ===== Filters ===== */
+.filters-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.filters-bar select,
+.filters-bar input {
+  padding: 9px 14px;
+  font-size: 0.92rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  background: #fff;
+  transition: border-color .2s;
+}
+.filters-bar select:focus,
+.filters-bar input:focus {
+  border-color: #1976d2;
+}
+.filters-bar input {
+  min-width: 280px;
+}
+
+/* ===== Table wrapper ===== */
+.table-wrapper {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  overflow-x: auto;
+}
+.table-toolbar {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+}
+.showing-label { font-size: 0.85rem; color: #666; }
+.export-btn {
+  padding: 7px 16px;
+  font-size: 0.85rem;
+  border: 1px solid #1976d2;
+  background: #e3f2fd;
+  color: #1976d2;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.export-btn:hover {
+  background: #1976d2;
+  color: #fff;
+}
+
+/* ===== Table ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+thead th {
+  background: #fafafa;
+  text-align: left;
+  padding: 10px 12px;
+  font-weight: 600;
+  border-bottom: 2px solid #e0e0e0;
+  white-space: nowrap;
+}
+tbody td {
+  padding: 9px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: top;
+}
+tbody tr:hover { background: #f9fbff; }
+tbody tr.team-row { background: #fafff7; }
+tbody tr.team-row:hover { background: #eef7e7; }
+
+/* Badge */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.badge.pending { background: #fff3cd; color: #856404; }
+.badge.confirmed { background: #d4edda; color: #155724; }
+.badge.cancelled { background: #f8d7da; color: #721c24; }
+
+.mono { font-family: 'Cascadia Mono', 'Consolas', monospace; font-size: 0.82rem; }
+
+/* ===== Team members expanded row ===== */
+.team-members-row td {
+  background: #f7f9fb;
+  padding: 8px 16px;
+}
+.team-members-list ul {
+  margin: 4px 0 0 18px;
+  list-style: disc;
+}
+.team-members-list li {
+  padding: 2px 0;
+  font-size: 0.84rem;
+  color: #444;
+}
+
+/* ===== Pagination ===== */
+.pagination {
+  display: flex;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+}
+.pagination button {
+  padding: 6px 18px;
+  border: 1px solid #ccc;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.pagination button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.pagination span { font-size: 0.88rem; color: #555; }
+
+/* ===== Error & loader ===== */
+.error-banner {
+  background: #fce4ec;
+  color: #c62828;
+  padding: 12px 18px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+.loader {
+  text-align: center;
+  padding: 48px;
+  color: #888;
+  font-size: 1rem;
 }
 
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
