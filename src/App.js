@@ -12,7 +12,7 @@ import ParticipantsTable from './components/ParticipantsTable';
 const PAGE_SIZE = 50;
 
 function App() {
-  const { allDocs, loading, error } = useRegistrations();
+  const { allDocs, loading, error, fetchNow, lastFetched } = useRegistrations();
   const [eventFilter, setEventFilter] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -47,13 +47,23 @@ function App() {
         totalParticipants={totalParticipants}
         totalRevenue={totalRevenue}
       />
-      <Filters
-        events={events}
-        selectedEvent={eventFilter}
-        onSelectEvent={handleEventChange}
-        search={search}
-        onSearch={handleSearchChange}
-      />
+      <div className="controls-row">
+        <Filters
+          events={events}
+          selectedEvent={eventFilter}
+          onSelectEvent={handleEventChange}
+          search={search}
+          onSearch={handleSearchChange}
+        />
+        <div className="fetch-block">
+          <button className="fetch-btn" onClick={fetchNow} disabled={loading}>
+            {loading ? 'Fetching…' : 'Fetch from Firebase'}
+          </button>
+          {lastFetched && (
+            <div className="last-fetched">Last: {new Date(lastFetched).toLocaleString()}</div>
+          )}
+        </div>
+      </div>
       {error && <div className="error-banner">⚠ {error}</div>}
       {loading ? (
         <div className="loader">Loading registrations…</div>
