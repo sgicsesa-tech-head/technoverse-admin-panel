@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import './App.css';
+import { db } from './firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 import useRegistrations, {
   computeTotalParticipants,
   getCompetitionNames,
@@ -8,14 +10,22 @@ import useRegistrations, {
 import Header from './components/Header';
 import Filters from './components/Filters';
 import ParticipantsTable from './components/ParticipantsTable';
+import Charts from './components/Charts';
 
 const PAGE_SIZE = 50;
 
 function App() {
-  const { allDocs, loading, error, fetchNow, lastFetched } = useRegistrations();
+  const { allDocs, loading, error, fetchNow, lastFetched, updateLocalStatuses } = useRegistrations();
   const [eventFilter, setEventFilter] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+
+  /* pending status changes: { [docId]: newStatus } — not yet pushed to Firestore */
+  const [pendingChanges, setPendingChanges] = useState({});
+  const [pushing, setPushing] = useState(false);
+  const [pushError, setPushError] = useState(null);
+
+  const hasPendingChanges = Object.keys(pendingChanges).length > 0;
 
   /* derive competition dropdown options from ALL docs (unfiltered) */
   const events = useMemo(() => getCompetitionNames(allDocs), [allDocs]);
@@ -40,6 +50,40 @@ function App() {
   const handleEventChange = (v) => { setEventFilter(v); setPage(1); };
   const handleSearchChange = (v) => { setSearch(v); setPage(1); };
 
+  /* toggle status locally (pending ↔ verified) */
+  function handleStatusToggle(id, currentEffectiveStatus) {
+    const originalStatus = allDocs.find((d) => d.id === id)?.status;
+    const newStatus = currentEffectiveStatus === 'pending' ? 'verified' : 'pending';
+    setPendingChanges((prev) => {
+      // if the new status is the same as the original, remove from pending (no net change)
+      if (newStatus === originalStatus) {
+        const { [id]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [id]: newStatus };
+    });
+  }
+
+  /* push all pending changes to Firestore */
+  async function handlePushUpdate() {
+    if (!hasPendingChanges || pushing) return;
+    setPushing(true);
+    setPushError(null);
+    try {
+      await Promise.all(
+        Object.entries(pendingChanges).map(([id, newStatus]) =>
+          updateDoc(doc(db, 'registrations', id), { status: newStatus })
+        )
+      );
+      updateLocalStatuses(pendingChanges);
+      setPendingChanges({});
+    } catch (err) {
+      setPushError(err.message || 'Failed to push updates');
+    } finally {
+      setPushing(false);
+    }
+  }
+
   return (
     <div className="app">
       <Header
@@ -59,12 +103,21 @@ function App() {
           <button className="fetch-btn" onClick={fetchNow} disabled={loading}>
             {loading ? 'Fetching…' : 'Fetch from Firebase'}
           </button>
+          <button
+            className="push-btn"
+            onClick={handlePushUpdate}
+            disabled={!hasPendingChanges || pushing}
+            title={hasPendingChanges ? `Push ${Object.keys(pendingChanges).length} change(s) to Firestore` : 'No pending changes'}
+          >
+            {pushing ? 'Pushing…' : `Push Update${hasPendingChanges ? ` (${Object.keys(pendingChanges).length})` : ''}`}
+          </button>
           {lastFetched && (
             <div className="last-fetched">Last: {new Date(lastFetched).toLocaleString()}</div>
           )}
         </div>
       </div>
       {error && <div className="error-banner">⚠ {error}</div>}
+      {pushError && <div className="error-banner">⚠ Push failed: {pushError}</div>}
       {loading ? (
         <div className="loader">Loading registrations…</div>
       ) : (
@@ -74,8 +127,11 @@ function App() {
           setPage={setPage}
           pageSize={PAGE_SIZE}
           totalFiltered={filtered.length}
+          pendingChanges={pendingChanges}
+          onStatusToggle={handleStatusToggle}
         />
       )}
+      <Charts allDocs={allDocs} />
     </div>
   );
 }

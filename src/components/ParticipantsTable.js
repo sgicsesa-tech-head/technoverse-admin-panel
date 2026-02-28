@@ -46,7 +46,7 @@ function formatTeamMembers(members) {
 }
 
 /* ---------- component ---------- */
-export default function ParticipantsTable({ rows, page, setPage, pageSize, totalFiltered }) {
+export default function ParticipantsTable({ rows, page, setPage, pageSize, totalFiltered, pendingChanges = {}, onStatusToggle }) {
   const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
   const [expandedRow, setExpandedRow] = useState(null);
   const toggle = (id) => setExpandedRow((prev) => (prev === id ? null : id));
@@ -79,7 +79,11 @@ export default function ParticipantsTable({ rows, page, setPage, pageSize, total
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, idx) => (
+              {rows.map((r, idx) => {
+            const effectiveStatus = pendingChanges[r.id] ?? r.status;
+            const isDirty = pendingChanges[r.id] !== undefined;
+            const isToggleable = effectiveStatus === 'pending' || effectiveStatus === 'verified';
+            return (
             <React.Fragment key={r.id}>
               <tr
                 className={r.isTeamEvent ? 'team-row' : ''}
@@ -95,7 +99,14 @@ export default function ParticipantsTable({ rows, page, setPage, pageSize, total
                 <td>{r.teamName || '—'}</td>
                 <td>{r.teamMemberCount ?? 1}</td>
                 <td>
-                  <span className={`badge ${r.status}`}>{r.status}</span>
+                  <span
+                    className={`badge ${effectiveStatus}${isToggleable ? ' badge-clickable' : ''}${isDirty ? ' badge-dirty' : ''}`}
+                    title={isToggleable ? `Click to toggle status` : undefined}
+                    onClick={isToggleable ? (e) => { e.stopPropagation(); onStatusToggle && onStatusToggle(r.id, effectiveStatus); } : undefined}
+                  >
+                    {isDirty && <span className="badge-dot">•</span>}
+                    {effectiveStatus}
+                  </span>
                 </td>
                 <td className="mono">{r.transactionId}</td>
                 <td>{formatDate(r.createdAt)}</td>
@@ -119,7 +130,8 @@ export default function ParticipantsTable({ rows, page, setPage, pageSize, total
                 </tr>
               )}
             </React.Fragment>
-          ))}
+            );
+          })}
           {rows.length === 0 && (
             <tr>
               <td colSpan={11} style={{ textAlign: 'center', padding: 24 }}>

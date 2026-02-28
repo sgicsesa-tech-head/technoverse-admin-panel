@@ -70,7 +70,21 @@ export default function useRegistrations() {
     setLastFetched(null);
   }
 
-  return { allDocs, loading, error, fetchNow, clearCache, lastFetched };
+  /** Apply a map of { [docId]: newStatus } to local state + cache without a network call */
+  function updateLocalStatuses(changes) {
+    setAllDocs((prev) => {
+      const updated = prev.map((d) =>
+        changes[d.id] ? { ...d, status: changes[d.id] } : d
+      );
+      try {
+        const ts = lastFetched ? lastFetched.toISOString() : new Date().toISOString();
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: ts, docs: updated }));
+      } catch (e) {}
+      return updated;
+    });
+  }
+
+  return { allDocs, loading, error, fetchNow, clearCache, lastFetched, updateLocalStatuses };
 }
 
 /* -------- helper: compute total participant head-count -------- */
