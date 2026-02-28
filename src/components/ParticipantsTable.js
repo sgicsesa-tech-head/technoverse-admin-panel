@@ -35,8 +35,17 @@ function exportCSV(rows) {
 /* ---------- helpers ---------- */
 function formatDate(val) {
   if (!val) return '';
-  // Firestore Timestamp objects have .toDate()
-  const d = val.toDate ? val.toDate() : new Date(val);
+  let d;
+  if (val.toDate) {
+    // Live Firestore Timestamp object
+    d = val.toDate();
+  } else if (val.seconds !== undefined) {
+    // Serialised Firestore Timestamp: { seconds, nanoseconds } from localStorage
+    d = new Date(val.seconds * 1000);
+  } else {
+    d = new Date(val);
+  }
+  if (isNaN(d)) return '';
   return d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
 }
 

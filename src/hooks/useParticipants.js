@@ -104,11 +104,25 @@ export function getCompetitionNames(rows) {
 }
 
 /* -------- helper: client-side filter + search -------- */
-export function filterRegistrations(rows, { eventFilter, search }) {
+export function filterRegistrations(rows, { eventFilter, search, teamType, statusFilter }) {
   let result = rows;
 
   if (eventFilter) {
     result = result.filter((r) => r.competitionName === eventFilter);
+  }
+
+  if (teamType) {
+    if (teamType === 'solo') {
+      result = result.filter((r) => !r.isTeamEvent);
+    } else if (teamType === 'team-small') {
+      result = result.filter((r) => r.isTeamEvent && (Number(r.teamMemberCount) || 1) >= 2 && (Number(r.teamMemberCount) || 1) <= 4);
+    } else if (teamType === 'team-large') {
+      result = result.filter((r) => r.isTeamEvent && (Number(r.teamMemberCount) || 1) >= 5);
+    }
+  }
+
+  if (statusFilter) {
+    result = result.filter((r) => (r.status || '').toLowerCase() === statusFilter.toLowerCase());
   }
 
   if (search) {

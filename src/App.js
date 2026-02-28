@@ -18,6 +18,8 @@ function App() {
   const { allDocs, loading, error, fetchNow, lastFetched, updateLocalStatuses } = useRegistrations();
   const [eventFilter, setEventFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [teamType, setTeamType] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
 
   /* pending status changes: { [docId]: newStatus } — not yet pushed to Firestore */
@@ -30,10 +32,10 @@ function App() {
   /* derive competition dropdown options from ALL docs (unfiltered) */
   const events = useMemo(() => getCompetitionNames(allDocs), [allDocs]);
 
-  /* filtered rows (by event & search) */
+  /* filtered rows (by event, team type, status & search) */
   const filtered = useMemo(
-    () => filterRegistrations(allDocs, { eventFilter, search }),
-    [allDocs, eventFilter, search]
+    () => filterRegistrations(allDocs, { eventFilter, search, teamType, statusFilter }),
+    [allDocs, eventFilter, search, teamType, statusFilter]
   );
 
   /* stats — computed over the FILTERED set */
@@ -49,6 +51,8 @@ function App() {
   /* reset to page 1 when filters change */
   const handleEventChange = (v) => { setEventFilter(v); setPage(1); };
   const handleSearchChange = (v) => { setSearch(v); setPage(1); };
+  const handleTeamTypeChange = (v) => { setTeamType(v); setPage(1); };
+  const handleStatusFilterChange = (v) => { setStatusFilter(v); setPage(1); };
 
   /* toggle status locally (pending ↔ verified) */
   function handleStatusToggle(id, currentEffectiveStatus) {
@@ -98,6 +102,10 @@ function App() {
           onSelectEvent={handleEventChange}
           search={search}
           onSearch={handleSearchChange}
+          teamType={teamType}
+          onTeamType={handleTeamTypeChange}
+          statusFilter={statusFilter}
+          onStatusFilter={handleStatusFilterChange}
         />
         <div className="fetch-block">
           <button className="fetch-btn" onClick={fetchNow} disabled={loading}>
