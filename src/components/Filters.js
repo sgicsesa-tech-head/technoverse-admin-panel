@@ -30,7 +30,7 @@ export default function Filters({
 
       <input
         type="text"
-        placeholder="Search by name, email or mobile..."
+        placeholder="Search by name, email, mobile or txn ID..."
         value={search}
         onChange={(e) => onSearch(e.target.value)}
       />

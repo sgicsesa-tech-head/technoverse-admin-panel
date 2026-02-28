@@ -131,7 +131,8 @@ export function filterRegistrations(rows, { eventFilter, search, teamType, statu
       (r) =>
         (r.candidateName || '').toLowerCase().includes(s) ||
         (r.candidateEmail || '').toLowerCase().includes(s) ||
-        (r.candidatePhone || '').toLowerCase().includes(s)
+        (r.candidatePhone || '').toLowerCase().includes(s) ||
+        (r.transactionId || '').toLowerCase().includes(s)
     );
   }
 
