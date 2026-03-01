@@ -127,13 +127,26 @@ export function filterRegistrations(rows, { eventFilter, search, teamType, statu
 
   if (search) {
     const s = search.toLowerCase().trim();
-    result = result.filter(
-      (r) =>
+    result = result.filter((r) => {
+      if (
         (r.candidateName || '').toLowerCase().includes(s) ||
         (r.candidateEmail || '').toLowerCase().includes(s) ||
         (r.candidatePhone || '').toLowerCase().includes(s) ||
         (r.transactionId || '').toLowerCase().includes(s)
-    );
+      ) return true;
+
+      // also search through team members' name, email, phone
+      if (Array.isArray(r.teamMembers)) {
+        return r.teamMembers.some(
+          (m) =>
+            (m.name || '').toLowerCase().includes(s) ||
+            (m.email || '').toLowerCase().includes(s) ||
+            (m.phone || '').toLowerCase().includes(s)
+        );
+      }
+
+      return false;
+    });
   }
 
   return result;
