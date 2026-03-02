@@ -66,7 +66,7 @@ function DonutChart({ title, data }) {
             {total}
           </text>
           <text x={CX} y={CY + 10} textAnchor="middle" fill="#999" fontSize="11">
-            total
+            participants
           </text>
         </svg>
 
@@ -91,7 +91,8 @@ export default function Charts({ allDocs }) {
     const map = {};
     allDocs.forEach((r) => {
       const key = r.competitionName || 'Unknown';
-      map[key] = (map[key] || 0) + 1;
+      const participants = r.isTeamEvent ? (Number(r.teamMemberCount) || 1) : 1;
+      map[key] = (map[key] || 0) + participants;
     });
     return Object.entries(map)
       .map(([label, count]) => ({ label, count }))
@@ -101,8 +102,16 @@ export default function Charts({ allDocs }) {
   const collegeData = useMemo(() => {
     const map = {};
     allDocs.forEach((r) => {
-      const key = r.candidateCollege || 'Unknown';
-      map[key] = (map[key] || 0) + 1;
+      if (r.isTeamEvent && Array.isArray(r.teamMembers) && r.teamMembers.length > 0) {
+        // count each team member's college individually
+        r.teamMembers.forEach((m) => {
+          const key = m.college || r.candidateCollege || 'Unknown';
+          map[key] = (map[key] || 0) + 1;
+        });
+      } else {
+        const key = r.candidateCollege || 'Unknown';
+        map[key] = (map[key] || 0) + 1;
+      }
     });
     return Object.entries(map)
       .map(([label, count]) => ({ label, count }))
@@ -116,8 +125,8 @@ export default function Charts({ allDocs }) {
     <div className="charts-section">
       <h2 className="charts-heading">Statistics</h2>
       <div className="charts-row">
-        <DonutChart title="Registrations by Competition" data={compData} />
-        <DonutChart title="Top Colleges" data={collegeData} />
+        <DonutChart title="Participants by Competition" data={compData} />
+        <DonutChart title="Participants by College" data={collegeData} />
       </div>
     </div>
   );

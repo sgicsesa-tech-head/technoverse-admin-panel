@@ -1,7 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import './App.css';
-import { db } from './firebase';
-import { doc, updateDoc } from 'firebase/firestore';
 import useRegistrations, {
   computeTotalParticipants,
   getCompetitionNames,
@@ -24,8 +22,8 @@ function App() {
 
   /* pending status changes: { [docId]: newStatus } — not yet pushed to Firestore */
   const [pendingChanges, setPendingChanges] = useState({});
-  const [pushing, setPushing] = useState(false);
-  const [pushError, setPushError] = useState(null);
+  const [pushing] = useState(false);
+  const [pushError] = useState(null);
 
   const hasPendingChanges = Object.keys(pendingChanges).length > 0;
 
@@ -68,24 +66,11 @@ function App() {
     });
   }
 
-  /* push all pending changes to Firestore */
+  /* push is disabled — updates local state only */
   async function handlePushUpdate() {
     if (!hasPendingChanges || pushing) return;
-    setPushing(true);
-    setPushError(null);
-    try {
-      await Promise.all(
-        Object.entries(pendingChanges).map(([id, newStatus]) =>
-          updateDoc(doc(db, 'registrations', id), { status: newStatus })
-        )
-      );
-      updateLocalStatuses(pendingChanges);
-      setPendingChanges({});
-    } catch (err) {
-      setPushError(err.message || 'Failed to push updates');
-    } finally {
-      setPushing(false);
-    }
+    updateLocalStatuses(pendingChanges);
+    setPendingChanges({});
   }
 
   return (
@@ -109,15 +94,15 @@ function App() {
         />
         <div className="fetch-block">
           <button className="fetch-btn" onClick={fetchNow} disabled={loading}>
-            {loading ? 'Fetching…' : 'Fetch from Firebase'}
+            {loading ? 'Loading…' : 'Refresh'}
           </button>
           <button
             className="push-btn"
             onClick={handlePushUpdate}
             disabled={!hasPendingChanges || pushing}
-            title={hasPendingChanges ? `Push ${Object.keys(pendingChanges).length} change(s) to Firestore` : 'No pending changes'}
+            title={hasPendingChanges ? `Apply ${Object.keys(pendingChanges).length} change(s)` : 'No pending changes'}
           >
-            {pushing ? 'Pushing…' : `Push Update${hasPendingChanges ? ` (${Object.keys(pendingChanges).length})` : ''}`}
+            {pushing ? 'Applying…' : `Apply Update${hasPendingChanges ? ` (${Object.keys(pendingChanges).length})` : ''}`}
           </button>
           {lastFetched && (
             <div className="last-fetched">Last: {new Date(lastFetched).toLocaleString()}</div>

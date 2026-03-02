@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { db } from '../firebase';
-import { collection, query, orderBy, getDocs } from 'firebase/firestore';
+import { useState } from 'react';
+
+// Remote Firestore fetching is disabled. The app operates on empty data only.
 
 /**
  * Fetches ALL registrations from Firestore once and lets the UI
@@ -18,70 +18,25 @@ export default function useRegistrations() {
   const [error, setError] = useState(null);
   const [lastFetched, setLastFetched] = useState(null);
 
-  const CACHE_KEY = 'registrations_cache_v1';
-
-  // load cache synchronously on mount (no network call)
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(CACHE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed.docs)) {
-          setAllDocs(parsed.docs);
-          setLastFetched(parsed.timestamp ? new Date(parsed.timestamp) : null);
-        }
-      }
-    } catch (e) {
-      // ignore parse errors
-    }
-  }, []);
-
-  // fetch function is manual — call when user clicks
+  // Fetch is a no-op — always resolves to empty data (no Firestore calls).
   async function fetchNow() {
-    if (!db) {
-      setError('Firebase not configured — check your .env');
-      return;
-    }
     setLoading(true);
     setError(null);
-    try {
-      const col = collection(db, 'registrations');
-      const q = query(col, orderBy('createdAt', 'desc'));
-      const snap = await getDocs(q);
-      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setAllDocs(docs);
-      const ts = new Date().toISOString();
-      setLastFetched(new Date(ts));
-      try {
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: ts, docs }));
-      } catch (e) {
-        // ignore quota errors
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to fetch registrations');
-    } finally {
-      setLoading(false);
-    }
+    setAllDocs([]);
+    setLastFetched(new Date());
+    setLoading(false);
   }
 
   function clearCache() {
-    try { localStorage.removeItem(CACHE_KEY); } catch (e) {}
     setAllDocs([]);
     setLastFetched(null);
   }
 
   /** Apply a map of { [docId]: newStatus } to local state + cache without a network call */
   function updateLocalStatuses(changes) {
-    setAllDocs((prev) => {
-      const updated = prev.map((d) =>
-        changes[d.id] ? { ...d, status: changes[d.id] } : d
-      );
-      try {
-        const ts = lastFetched ? lastFetched.toISOString() : new Date().toISOString();
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: ts, docs: updated }));
-      } catch (e) {}
-      return updated;
-    });
+    setAllDocs((prev) =>
+      prev.map((d) => (changes[d.id] ? { ...d, status: changes[d.id] } : d))
+    );
   }
 
   return { allDocs, loading, error, fetchNow, clearCache, lastFetched, updateLocalStatuses };
